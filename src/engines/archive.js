@@ -6,7 +6,9 @@ import { LIBARCHIVE_WORKER } from '../config.js';
 let ready = null;
 async function load() {
   if (!ready) ready = (async () => {
-    const { Archive } = await import('libarchive.js/main.js');
+    const mod = await import('libarchive-entry'); // alias defined in vite.config.js
+    const Archive = mod.Archive || (mod.default && (mod.default.Archive || mod.default));
+    if (!Archive || !Archive.open) throw new Error('Archive support could not be loaded.');
     Archive.init({ workerUrl: LIBARCHIVE_WORKER });
     return Archive;
   })().catch(e => { ready = null; throw e; });
