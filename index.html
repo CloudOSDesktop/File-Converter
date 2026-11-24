@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>File Converter</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--fg:#1d1d1b;--mut:#6b6a64;--line:#dedcd3;--acc:#2d5be3;--accfg:#fff;--ok:#1f7a45;--err:#b3261e}
+@media(prefers-color-scheme:dark){:root{--bg:#161615;--card:#1f1f1d;--fg:#ecebe6;--mut:#9a9890;--line:#34332f;--acc:#6b8cff;--accfg:#10131c;--ok:#5ccf8b;--err:#ff8a80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;justify-content:center;padding:32px 16px 64px}
+main{width:100%;max-width:680px}
+h1{font-size:26px;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--mut);margin:0 0 24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
+.dz{display:block;border:2px dashed var(--line);border-radius:14px;padding:40px 20px;text-align:center;cursor:pointer;background:var(--card);transition:border-color .15s,background .15s;margin-bottom:16px}
+.dz:hover,.dz:focus-visible,.dz.over{border-color:var(--acc);outline:none}
+.dz.over{background:color-mix(in srgb,var(--acc) 8%,var(--card))}
+.dz strong{display:block;font-size:18px;margin-bottom:4px}
+.dz span{color:var(--mut);font-size:14px}
+.hidden{display:none!important}
+.fileinfo{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.fname{font-weight:600;word-break:break-all}
+.fmeta{color:var(--mut);font-size:14px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:20px 0 8px;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:14px;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--fg);cursor:pointer}
+.chip:hover{border-color:var(--acc)}
+.chip[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:var(--accfg)}
+.opt{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--mut)}
+.opt input{flex:1;accent-color:var(--acc)}
+button.go{font:inherit;font-weight:600;width:100%;margin-top:20px;padding:12px;border-radius:10px;border:0;background:var(--acc);color:var(--accfg);cursor:pointer}
+button.go:disabled{opacity:.45;cursor:not-allowed}
+#status{margin-top:12px;font-size:14px;color:var(--mut);min-height:1.4em}
+#status.err{color:var(--err)}
+#result .row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+#result .ok{color:var(--ok);font-weight:600}
+a.dl{display:inline-block;padding:9px 18px;border-radius:10px;background:var(--acc);color:var(--accfg);text-decoration:none;font-weight:600}
+#preview{margin-top:16px}
+#preview img,#preview video{max-width:100%;max-height:360px;border-radius:8px;border:1px solid var(--line);background:repeating-conic-gradient(#8881 0 25%,transparent 0 50%) 0 0/16px 16px}
+#preview audio{width:100%}
+#preview pre{margin:0;max-height:260px;overflow:auto;padding:12px;border-radius:8px;border:1px solid var(--line);font-size:13px;white-space:pre-wrap;word-break:break-word}
+.note{margin-top:10px;font-size:14px;color:var(--mut)}
+details{color:var(--mut);font-size:14px}
+summary{cursor:pointer;color:var(--fg);font-weight:600}
+details ul{padding-left:20px;margin:8px 0}
+.foot{text-align:center;color:var(--mut);font-size:13px;margin-top:8px}
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.flist{list-style:none;margin:12px 0 0;padding:0}
+.flist li{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+.flist li:first-child{border-top:0}
+.fn{flex:1;min-width:0;word-break:break-all;font-weight:500}
+.mt{color:var(--mut);font-size:12px;white-space:nowrap}
+.st{color:var(--mut);font-size:13px;text-align:right;max-width:46%}
+.st.ok{color:var(--ok)}.st.err{color:var(--err)}
+a.mini{font-size:13px;color:var(--acc)}
+.ib{font:inherit;line-height:1;border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:6px;cursor:pointer;padding:4px 8px}
+.ib:disabled{opacity:.35;cursor:not-allowed}
+button.link{background:none;border:0;color:var(--acc);cursor:pointer;font:inherit;font-size:14px;padding:0}
+button.dl{font:inherit;border:0;cursor:pointer;padding:9px 18px;border-radius:10px;background:var(--acc);color:var(--accfg);font-weight:600}
+@media(max-width:520px){.mt{display:none}.st{max-width:40%}}
+</style>
+</head>
+<body>
+<main>
+  <h1>File Converter</h1>
+  <p class="sub">Convert files one by one or in bulk, or combine PDFs. Conversions run in your browser, so your files stay on your device.</p>
+
+  <div class="tabs">
+    <button type="button" class="chip" id="tabConvert" aria-pressed="true">Convert files</button>
+    <button type="button" class="chip" id="tabCombine" aria-pressed="false">Combine PDFs</button>
+  </div>
+
+  <div id="convertPane">
+    <label id="drop" class="dz" for="picker" tabindex="0">
+      <strong>Drop files here, or click to choose</strong>
+      <span>Select several at once, or drop an archive (zip, 7z, rar, tar&hellip;) to convert everything inside &middot; images, audio, video, documents, spreadsheets, PDFs</span>
+      <input id="picker" type="file" multiple hidden>
+    </label>
+
+    <section id="work" class="card hidden">
+      <div class="fileinfo"><span class="fmeta" id="fcount"></span><button type="button" class="link" id="clear">Clear all</button></div>
+      <ul class="flist" id="flist"></ul>
+      <h2>Convert to</h2>
+      <div class="chips" id="targets"></div>
+      <div id="qopt" class="hidden">
+        <h2>Quality</h2>
+        <label class="opt"><input id="quality" type="range" min="0.3" max="1" step="0.01" value="0.92"><span id="qval">92%</span></label>
+      </div>
+      <button class="go" id="go" disabled>Convert</button>
+      <div id="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <section id="result" class="card hidden">
+      <div class="row"><span class="ok" id="rname"></span><a class="dl" id="dl">Download</a><button type="button" class="dl" id="zipbtn">Download all (.zip)</button></div>
+      <div class="note" id="rnote"></div>
+      <div id="preview"></div>
+    </section>
+  </div>
+
+  <div id="combinePane" class="hidden">
+    <label id="drop2" class="dz" for="picker2" tabindex="0">
+      <strong>Drop PDFs here, or click to choose</strong>
+      <span>A .zip of PDFs works too &middot; images (JPG, PNG, WebP&hellip;) become one page each</span>
+      <input id="picker2" type="file" multiple hidden accept=".pdf,.zip,application/pdf,application/zip,image/*">
+    </label>
+
+    <section id="work2" class="card hidden">
+      <div class="fileinfo"><span class="fmeta" id="fcount2"></span><button type="button" class="link" id="clear2">Clear all</button></div>
+      <ul class="flist" id="flist2"></ul>
+      <button class="go" id="go2" disabled>Combine into one PDF</button>
+      <div id="status2" role="status" aria-live="polite"></div>
+    </section>
+
+    <section id="result2" class="card hidden">
+      <div class="row"><span class="ok" id="r2name"></span><a class="dl" id="dl2">Download</a></div>
+      <div class="note" id="r2note"></div>
+    </section>
+  </div>
+
+  <details class="card">
+    <summary>What can it do?</summary>
+    <ul>
+      <li><b>Images:</b> PNG, JPG, WebP, GIF, BMP, ICO, SVG, AVIF, HEIC, TIFF, PSD, JPEG XL, TGA&hellip; &harr; each other, and to PDF</li>
+      <li><b>Audio:</b> MP3, WAV, OGG, Opus, FLAC, M4A, AAC, AIFF, WMA&hellip; &harr; each other</li>
+      <li><b>Video:</b> MP4, MOV, MKV, WebM, AVI, GIF&hellip; &harr; each other, plus audio extraction and still frames</li>
+      <li><b>Documents:</b> TXT, Markdown, HTML, DOCX, ODT, EPUB, RTF, LaTeX, reST, Org, AsciiDoc&hellip; &harr; each other, plus PPTX from Markdown/DOCX, and PDF output</li>
+      <li><b>PDF:</b> pages to PNG/JPG/WebP, text extraction, split into single pages, and the <i>Combine PDFs</i> tab</li>
+      <li><b>Data &amp; spreadsheets:</b> JSON, CSV, TSV, XML, YAML, XLSX, XLS, ODS, HTML</li>
+      <li><b>Archives:</b> drop a ZIP, 7Z, RAR, TAR, GZ&hellip; and everything inside is unpacked for bulk conversion</li>
+      <li><b>Server-side (&ldquo;&middot; server&rdquo; options, when enabled):</b> Word/PowerPoint/Excel &harr; PDF with full formatting, PDF &rarr; DOCX/XLSX/PPTX, ebooks (MOBI, AZW3), Illustrator/EPS/CAD files</li>
+      <li><b>Bulk:</b> select or drop many files, pick one target format, then download each result or everything as a ZIP.</li>
+    </ul>
+    <p>Everything marked without &ldquo;server&rdquo; runs in your browser &mdash; files are not uploaded. Big engines (FFmpeg, ImageMagick, Pandoc) download once, the first time you use them. Video and audio conversion runs on your own computer, so long videos take a while.</p>
+    <p>Limits: the Combine PDFs tool can&rsquo;t open password-protected PDFs and drops bookmarks and fillable-form data; &ldquo;server&rdquo; conversions send the file to a third-party conversion service.</p>
+  </details>
+  <p class="foot">Most conversions run entirely in your browser.</p>
+</main>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
